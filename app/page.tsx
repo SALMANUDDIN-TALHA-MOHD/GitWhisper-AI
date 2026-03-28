@@ -9,6 +9,7 @@ import {
   Mail, MessageSquare, ExternalLink, Github, Star, LogOut, X, User
 } from 'lucide-react'
 import GlowOrb from '@/components/GlowOrb'
+import AIBackground from '@/components/AIBackground'
 import CustomCursor from '@/components/CustomCursor'
 import { createClient } from '@/lib/supabase/client'
 
@@ -295,15 +296,30 @@ export default function LandingPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Device fingerprint for free limit — persistent per device
-    let deviceId = localStorage.getItem('gw_device_id')
+    // Free limit — device ID stored in BOTH localStorage AND a long-lived cookie
+    // Cookies survive browser history clearing on most browsers
+    const COOKIE_NAME = 'gw_did'
+    const getCookie = (name: string) => {
+      const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
+      return m ? m.pop() : ''
+    }
+    const setCookie = (name: string, value: string, days: number) => {
+      const d = new Date(); d.setTime(d.getTime() + days*24*60*60*1000)
+      document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/;SameSite=Lax`
+    }
+    // Get or create device ID — prefer cookie, fall back to localStorage
+    let deviceId = getCookie(COOKIE_NAME) || localStorage.getItem('gw_device_id') || ''
     if (!deviceId) {
       deviceId = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
-      localStorage.setItem('gw_device_id', deviceId)
     }
-    // Use device-specific key so signing out doesn't reset count
+    // Persist in both stores
+    setCookie(COOKIE_NAME, deviceId, 365)
+    localStorage.setItem('gw_device_id', deviceId)
     const storageKey = 'gw_free_' + deviceId
-    const n = parseInt(localStorage.getItem(storageKey) || '0')
+    // Also check cookie-stored count as fallback
+    const cookieCount = parseInt(getCookie('gw_fc') || '0')
+    const localCount  = parseInt(localStorage.getItem(storageKey) || '0')
+    const n = Math.max(cookieCount, localCount)
     setFreeUsed(n)
     const sb = createClient()
     sb.auth.getUser().then(({ data:{ user } }) => { setUser(user||null); setUserLoaded(true) })
@@ -353,6 +369,9 @@ export default function LandingPage() {
         const used = parseInt(localStorage.getItem(storageKey) || '0')
         const nu = used + 1
         localStorage.setItem(storageKey, String(nu))
+        // Also persist in cookie so it survives history clearing
+        const d = new Date(); d.setTime(d.getTime() + 365*24*60*60*1000)
+        document.cookie = `gw_fc=${nu};expires=${d.toUTCString()};path=/;SameSite=Lax`
         setFreeUsed(nu)
       }
       router.push(`/repo/${parsed.owner}/${parsed.name}`)
@@ -518,14 +537,21 @@ export default function LandingPage() {
       {/* ══════════ HERO ══════════ */}
       <section id="hero" className="relative flex flex-col items-center justify-center px-4 overflow-hidden"
         style={{minHeight:'100svh', paddingTop:72, paddingBottom:40}}>
-        <GlowOrb className="top-1/4 left-1/4 w-[400px] h-[400px] sm:w-[500px] sm:h-[500px]" color="#6366f1" blur={120}/>
-        <GlowOrb className="bottom-1/4 right-1/4 w-[300px] h-[300px] sm:w-[350px] sm:h-[350px]" color="#c9a84c" blur={100}/>
-        <div className="absolute inset-0 opacity-[0.025]" style={{
-          backgroundImage:'linear-gradient(rgba(99,102,241,1) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,1) 1px,transparent 1px)',
-          backgroundSize:'60px 60px'
+
+        {/* AI animated background — neural net + matrix rain */}
+        <AIBackground/>
+
+        {/* Soft radial vignette so content stays readable */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background:'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, var(--bg) 100%)',
+          zIndex:1
         }}/>
 
-        <div className="relative z-10 w-full max-w-2xl mx-auto text-center flex flex-col items-center gap-0">
+        {/* Glow orbs on top of canvas */}
+        <GlowOrb className="top-1/3 left-1/4 w-[380px] h-[380px] sm:w-[480px] sm:h-[480px]" color="#e11d48" blur={130}/>
+        <GlowOrb className="bottom-1/3 right-1/4 w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]" color="#f59e0b" blur={110}/>
+
+        <div className="relative w-full max-w-2xl mx-auto text-center flex flex-col items-center gap-0" style={{zIndex:10}}>
           {/* Badge */}
           <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/8 mb-3">
@@ -615,7 +641,7 @@ export default function LandingPage() {
         {/* Scroll cue */}
         <motion.button onClick={()=>scrollTo('features')}
           animate={{y:[0,5,0]}} transition={{repeat:Infinity,duration:2.5}}
-          className="relative z-10 mt-6 flex flex-col items-center gap-1 text-[var(--text3)] hover:text-[var(--text2)] transition-colors">
+          className="relative mt-6 flex flex-col items-center gap-1 text-[var(--text3)] hover:text-[var(--text2)] transition-colors" style={{zIndex:10}}>
           <span className="text-[10px] font-mono">scroll to explore</span>
           <ChevronDown size={13}/>
         </motion.button>
@@ -647,7 +673,7 @@ export default function LandingPage() {
 
       {/* ══════════ HOW IT WORKS ══════════ */}
       <section id="how-it-works" className="relative py-10 sm:py-20 px-4">
-        <GlowOrb className="top-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px]" color="#6366f1" blur={100}/>
+        <GlowOrb className="top-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px]" color="#9f1239" blur={100}/>
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-10 sm:mb-14">
             <motion.span initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}}
@@ -673,7 +699,7 @@ export default function LandingPage() {
 
       {/* ══════════ CONTACT ══════════ */}
       <section id="contact" className="relative py-14 sm:py-20 px-4 overflow-hidden">
-        <GlowOrb className="top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px]" color="#6366f1" blur={130}/>
+        <GlowOrb className="top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px]" color="#be123c" blur={130}/>
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-10 sm:mb-12">
             <motion.span initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}}

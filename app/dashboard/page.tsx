@@ -40,21 +40,32 @@ export default function DashboardPage() {
   const [inputError, setInputError] = useState('')
   const router = useRouter()
 
+  const [loginCount, setLoginCount] = useState(0)
+  const [totalRepos, setTotalRepos] = useState(0)
+
   const loadData = useCallback(async (userId: string) => {
     const sb = getClient()
-    const [{ data: a }, { data: p }] = await Promise.all([
+    const [{ data: a }, { data: p }, { count: lc }, { count: rc }] = await Promise.all([
       sb.from('repo_analyses')
         .select('id,owner,repo_name,repo_url,language,stars,analysed_at')
         .eq('user_id', userId)
         .order('analysed_at', { ascending: false })
-        .limit(5),
+        .limit(50),
       sb.from('user_profiles')
         .select('full_name,email,total_logins,created_at,last_seen')
         .eq('id', userId)
         .single(),
+      (sb as any).from('login_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      (sb as any).from('repo_analyses')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId),
     ])
     if (a) setAnalyses(a as Analysis[])
     if (p) setProfile(p as Profile)
+    setLoginCount(lc || 1)   // at least 1 (current session)
+    setTotalRepos(rc || 0)
   }, [])
 
   useEffect(() => {
@@ -234,8 +245,8 @@ export default function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5 sm:mb-7">
           {[
-            { label:'Repos Analysed', value: analyses.length, icon:<GitBranch size={15}/>, color:'#6366f1' },
-            { label:'Total Sessions',  value: profile?.total_logins ?? 1, icon:<Zap size={15}/>, color:'#c9a84c' },
+            { label:'Repos Analysed', value: totalRepos || analyses.length, icon:<GitBranch size={15}/>, color:'#06b6d4' },
+            { label:'Total Sign-ins',  value: loginCount, icon:<Zap size={15}/>, color:'#10b981' },
             { label:'Last Analysis',   value: lastRepo ? new Date(lastRepo.analysed_at).toLocaleDateString() : '—', icon:<Clock size={15}/>, color:'#3b82f6' },
             { label:'Last Language',   value: lastRepo?.language || '—', icon:<Code2 size={15}/>, color:'#22c55e' },
           ].map(({ label, value, icon, color }) => (

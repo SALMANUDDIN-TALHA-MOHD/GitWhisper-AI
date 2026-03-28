@@ -3,7 +3,6 @@ import { Inter, Syne, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 
-// Next.js optimized fonts — no flash, no stretch, self-hosted via CDN
 const inter = Inter({
   subsets: ['latin'],
   weight: ['300','400','500','600','700','800','900'],
@@ -28,6 +27,13 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'GitWhisper AI — Understand Any GitHub Repository',
   description: 'Paste any GitHub URL. Get instant code explanations, 3D activity charts, and analytics. Free to start.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +41,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en"
       className={`${inter.variable} ${syne.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+      </head>
       <body className={inter.className}>
         {children}
         <Toaster
