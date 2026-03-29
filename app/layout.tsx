@@ -27,24 +27,29 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'GitWhisper AI — Understand Any GitHub Repository',
   description: 'Paste any GitHub URL. Get instant code explanations, 3D activity charts, and analytics. Free to start.',
+  // Keep icons here for completeness, but the <head> will override it
   icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: '/favicon-1.png',
+    shortcut: '/favicon-1.png',
+    apple: '/favicon-1.png',
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en"
+    <html
+      lang="en"
       className={`${inter.variable} ${syne.variable} ${jetbrainsMono.variable}`}
-      suppressHydrationWarning>
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        {/* Favicon for modern browsers */}
+        <link rel="icon" type="image/png" href="/favicon-1.png" />
+        {/* Shortcut icon for older browsers */}
+        <link rel="shortcut icon" href="/favicon-1.png" />
+        {/* Apple touch icon */}
+        <link rel="apple-touch-icon" href="/favicon-1.png" />
+        <title>GitWhisper AI — Understand Any GitHub Repository</title>
       </head>
       <body className={inter.className}>
         {children}
@@ -59,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               fontSize: '13px',
             },
             success: { iconTheme: { primary: '#6366f1', secondary: '#fff' } },
-            error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+            error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
           }}
         />
       </body>
